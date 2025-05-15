@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Approved Appointments</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        <label for="email">Email :</label>
+        <input type="text" class="form-control" id="email" required>
+        <br>
+        <a href="#" id="view-appointments">View Appointments</a>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Email</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Assigned Doctor</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="approved-appointments-table-body"></tbody>
+        </table>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Function to fetch approved appointments
+            function fetchApprovedAppointments(email = '') {
+                fetch('http://localhost:3000/api/approved_appointments') // Replace with your API endpoint
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        const tableBody = document.getElementById('approved-appointments-table-body');
+                        tableBody.innerHTML = ''; // Clear existing data
+
+                        const filteredData = email ? data.filter(appointment => appointment.email.includes(email)) : data;
+
+                        filteredData.forEach(appointment => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${appointment.first_name}</td>
+                                <td>${appointment.last_name}</td>
+                                <td>${appointment.email}</td>
+                                <td>${appointment.date}</td>
+                                <td>${appointment.time}</td>
+                                <td>${appointment.assigned_doctor}</td>
+                                <td>${appointment.status}</td>
+                                <td>
+                                    <button class="btn btn-danger" onclick="deleteAppointment(${appointment.id})">Delete</button>
+                                </td>
+                            `;
+                            tableBody.appendChild(row);
+                        });
+                    })
+                    .catch(error => console.error('There was a problem with the fetch operation:', error));
+            }
+
+            // Call the function to fetch appointments on page load
+            fetchApprovedAppointments();
+
+            // Function to delete an appointment
+            window.deleteAppointment = function (id) {
+               fetch(`http://localhost:3000/api/delete_appointment/${id}`, { // Corrected endpoint
+    method: 'DELETE',
+})
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    fetchApprovedAppointments(); // Refresh the list after deletion
+                })
+                .catch(error => console.error('There was a problem with the delete operation:', error));
+            };
+
+            // Search functionality
+            document.getElementById('view-appointments').addEventListener('click', function (event) {
+                event.preventDefault(); // Prevent default anchor click behavior
+                const emailInput = document.getElementById('email').value;
+                fetchApprovedAppointments(emailInput); // Fetch appointments filtered by email
+            });
+        });
+    </script>
+</body>
+</html>
